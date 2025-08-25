@@ -49,12 +49,21 @@ def login(req: LoginReq):
     return {"token": token}
 
 # 🙋‍♂️ Authenticated user info
+# 🙋‍♂️ Authenticated user info
 @app.get("/me")
 def me(creds: HTTPAuthorizationCredentials = Depends(security)):
     try:
         payload = jwt.decode(creds.credentials, JWT_SECRET, algorithms=["HS256"])
-    except Exception:
-        raise HTTPException
+        return {
+            "email": payload["sub"],
+            "name": payload["name"],
+            "issued_at": payload["iat"]
+        }
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
 
 @app.get("/")
 def root():
