@@ -1,0 +1,25 @@
+{
+  "name": "ai-microservices-example",
+  "version": "1.0.0",
+  "description": "Example of two microservices: one for product data and one for AI queries using AWS Bedrock.",
+  "main": "product-service.js",
+  "scripts": {
+    "start:product": "node product-service.js",
+    "start:query": "node query-service.js",
+    "start": "npm run start:product & npm run start:query"
+  },
+  "keywords": [
+    "microservices",
+    "express",
+    "aws",
+    "bedrock",
+    "ai"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.525.0",
+    "axios": "^1.6.8",
+    "express": "^4.18.3"
+  }
+}
