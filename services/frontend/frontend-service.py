@@ -1,7 +1,4 @@
 # FILE: frontend-service.py
-# This is the new frontend microservice.
-# It provides a web interface for the user to interact with the query-service.
-# -----------------------------------------------------------------------------
 
 import os
 import requests
@@ -11,11 +8,13 @@ from flask import Flask, render_template_string, request
 app = Flask(__name__)
 
 # --- Microservice Ports ---
-# Define the port for the query service to make API calls to.
+# Define the ports for the query and product services.
 QUERY_SERVICE_PORT = 8002
+PRODUCT_SERVICE_PORT = 8001
 
-# The URL of the query microservice.
+# The URLs of the microservices.
 QUERY_SERVICE_URL = f'http://localhost:{QUERY_SERVICE_PORT}/query'
+PRODUCT_SERVICE_URL = f'http://localhost:{PRODUCT_SERVICE_PORT}/products'
 
 # --- HTML Template for the Web Page ---
 # This is a simple HTML template for the user interface.
@@ -37,6 +36,8 @@ HTML_TEMPLATE = """
         .query-button:hover { background-color: #0056b3; }
         .response-box { background-color: white; border: 1px solid #ddd; padding: 15px; border-radius: 4px; }
         .response-title { font-weight: bold; margin-bottom: 10px; }
+        .product-list { margin-top: 30px; }
+        .product-item { background-color: white; border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 4px; }
         pre { white-space: pre-wrap; word-wrap: break-word; }
         .error { color: red; }
     </style>
@@ -60,6 +61,21 @@ HTML_TEMPLATE = """
             <p>{{ error }}</p>
         </div>
         {% endif %}
+        
+        <div class="product-list">
+            <h2>Available Products</h2>
+            {% if products %}
+            {% for product in products %}
+            <div class="product-item">
+                <strong>{{ product.name }}</strong><br>
+                Price: ${{ product.price }}
+            </div>
+            {% endfor %}
+            {% else %}
+            <p>No products available.</p>
+            {% endif %}
+        </div>
+
     </div>
 </body>
 </html>
@@ -69,36 +85,39 @@ HTML_TEMPLATE = """
 def index():
     """
     Main route for the frontend.
-    Handles user input and displays the AI's response.
+    Handles user input and displays the AI's response and product list.
     """
     user_query = request.args.get('q')
     answer = None
+    products = []
     error = None
 
+    # Step 1: Fetch the product list first
+    try:
+        product_response = requests.get(PRODUCT_SERVICE_URL, timeout=10)
+        product_response.raise_for_status()
+        products = product_response.json()
+    except requests.exceptions.RequestException as e:
+        error = f"Could not connect to the Product Service. Is it running? Details: {e}"
+
+    # Step 2: Handle the AI query if one exists
     if user_query:
         print(f"User query received: '{user_query}'")
         try:
-            # Call the query service API
             response = requests.get(QUERY_SERVICE_URL, params={'q': user_query}, timeout=30)
-            
-            # Raise an HTTPError for bad responses (4xx or 5xx)
             response.raise_for_status() 
-
-            # Parse the JSON response
             data = response.json()
             answer = data.get('answer')
             if not answer:
                 error = data.get('error', 'The query service did not return a valid answer.')
-
         except requests.exceptions.RequestException as e:
             error = f"Could not connect to the AI Query Service. Please ensure it's running. Details: {e}"
         except Exception as e:
             error = f"An unexpected error occurred: {e}"
 
-    return render_template_string(HTML_TEMPLATE, query=user_query, answer=answer, error=error)
+    return render_template_string(HTML_TEMPLATE, query=user_query, answer=answer, products=products, error=error)
 
 if __name__ == '__main__':
-    # Define the port from an environment variable or default to 8000
     PORT = int(os.environ.get('PORT', 8000))
     app.run(debug=True, port=PORT)
     print(f"🚀 Flask frontend service running on http://localhost:{PORT}")
