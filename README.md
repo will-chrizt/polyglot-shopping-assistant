@@ -19,9 +19,14 @@ In your second terminal window, navigate to the directory containing query-servi
 Bash
 
 # Set these environment variables in your terminal session
+
+
 export AWS_REGION="your-aws-region" # e.g., us-east-1
 export AWS_ACCESS_KEY_ID="YOUR_AWS_ACCESS_KEY_ID"
 export AWS_SECRET_ACCESS_KEY="YOUR_AWS_SECRET_ACCESS_KEY"
+
+# Then, run the service:
+node query-service.js
 
 # Then, run the service:
 node query-service.js
