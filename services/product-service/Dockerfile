@@ -29,7 +29,7 @@ USER appuser
 
 # Health check endpoint (optional)
 HEALTHCHECK --interval=30s --timeout=10s \
-  CMD wget --spider http://localhost:3000/health || exit 1
+  CMD wget --spider http://localhost:8001/health || exit 1
 
 EXPOSE 8001
 
