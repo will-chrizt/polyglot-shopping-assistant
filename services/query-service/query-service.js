@@ -122,7 +122,8 @@ app_query.get('/query', async (req, res) => {
     }
 });
 
-app_query.listen(PORT_QUERY, () => {
-    console.log(`✅ AI Query service running on http://localhost:${PORT_QUERY}`);
-    console.log(`🚀 Try it out: http://localhost:${PORT_QUERY}/query?q=what+is+a+good+budget+laptop+for+coding`);
+const HOST_QUERY = process.env.HOST_QUERY || '0.0.0.0';
+app_query.listen(PORT_QUERY, HOST_QUERY, () => {
+  console.log(`✅ AI Query service running at http://${HOST_QUERY}:${PORT_QUERY}`);
+  console.log(`🚀 Try it out: http://${HOST_QUERY}:${PORT_QUERY}/query?q=what+is+a+good+budget+laptop+for+coding`);
 });
