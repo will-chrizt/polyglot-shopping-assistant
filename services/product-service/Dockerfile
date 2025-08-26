@@ -31,6 +31,6 @@ USER appuser
 HEALTHCHECK --interval=30s --timeout=10s \
   CMD wget --spider http://localhost:3000/health || exit 1
 
-EXPOSE 3000
+EXPOSE 8001
 
 CMD ["node", "index.js"]
