@@ -48,4 +48,7 @@ app.get('/products/:id', (req, res) => {
     res.json(p);
 });
 
-app.listen(PORT, () => console.log(`✅ Product service running on http://localhost:${PORT}`));
+const HOST = process.env.HOST || '0.0.0.0';
+app.listen(PORT, HOST, () => {
+  console.log(`✅ Product service running at ${HOST}:${PORT}`);
+});
