@@ -66,7 +66,9 @@ app_query.get('/query', async (req, res) => {
     try {
         // Step 1: Fetch all products from the product-service
         console.log('Fetching products from product-service...');
-        const productResponse = await axios.get(`http://localhost:${PORT_PRODUCT}/products`);
+        const productHost = process.env.PRODUCT_SERVICE_HOST || 'product-service';
+        const productURL = `http://${productHost}:${PORT_PRODUCT}/products`;
+        const productResponse = await axios.get(productURL);
         const products = productResponse.data;
         console.log(`Successfully fetched ${products.length} products.`);
 
