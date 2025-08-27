@@ -33,4 +33,4 @@ HEALTHCHECK --interval=30s --timeout=10s \
 
 EXPOSE 8001
 
-CMD ["node", "index.js"]
+CMD ["node", "src/index.js"]
