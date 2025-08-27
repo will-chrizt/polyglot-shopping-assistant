@@ -13,8 +13,9 @@ QUERY_SERVICE_PORT = 8002
 PRODUCT_SERVICE_PORT = 8001
 
 # The URLs of the microservices.
-QUERY_SERVICE_URL = f'http://localhost:{QUERY_SERVICE_PORT}/query'
-PRODUCT_SERVICE_URL = f'http://localhost:{PRODUCT_SERVICE_PORT}/products'
+QUERY_SERVICE_URL = f'http://query-service:{QUERY_SERVICE_PORT}/query'
+PRODUCT_SERVICE_URL = f'http://product-service:{PRODUCT_SERVICE_PORT}/products'
+
 
 # --- HTML Template for the Web Page ---
 # This is a simple HTML template for the user interface.
@@ -119,8 +120,4 @@ def index():
 
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 8000))
-    HOST = os.environ.get('HOST', '0.0.0.0')
-    app.run(debug=True, host=HOST, port=PORT)
-    print(f"🚀 Flask frontend service running on {HOST}:{PORT}")
-    print(f"🔗 Access the application here (if exposed): http://<your-host-or-service-name>:${PORT}")
-
+    app.run(host='0.0.0.0', port=PORT)
