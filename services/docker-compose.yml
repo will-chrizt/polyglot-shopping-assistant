@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  product-service:
+    image: willchrist/test:1
+    ports:
+      - "8001:8001"
+
+  query-service:
+    image: willchrist/q1:latest
+    ports:
+      - "8002:8002"
+    depends_on:
+      - product-service
+    env_file:
+      - .env
+    environment:
+      - PORT_PRODUCT=8001
+
+  frontend-service:
+    image: willchrist/frontend:test
+    ports:
+      - "8000:8000"
+    depends_on:
+      - query-service
+      - product-service
+    env_file:
+      - .env
+    environment:
+      - QUERY_SERVICE_PORT=8002
+      - PRODUCT_SERVICE_PORT=8001
