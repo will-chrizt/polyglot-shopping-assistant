@@ -29,8 +29,9 @@ ENV PORT=8000
 WORKDIR /app
 
 # Copy only what's needed from builder stage
-COPY --from=builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
-COPY --from=builder /app /app
+COPY --from=builder /usr/local/lib/python3.11 /usr/local/lib/python3.11 \
+                    /app /app
+
 
 EXPOSE 8000
 
