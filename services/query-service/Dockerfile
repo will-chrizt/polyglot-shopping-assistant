@@ -14,4 +14,4 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup && chown -R appuser:a
 COPY --from=builder /app ./
 USER appuser
 EXPOSE 8002
-CMD ["node", "query-service.js"]
+ENTRYPOINT ["node", "query-service.js"]
