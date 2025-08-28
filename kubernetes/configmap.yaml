@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ecommerce-config
+data:
+  PORT_PRODUCT: "8001"
+  QUERY_SERVICE_PORT: "8002"
+  PRODUCT_SERVICE_PORT: "8001"
+
