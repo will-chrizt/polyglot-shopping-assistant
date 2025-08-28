@@ -2,12 +2,12 @@ version: '3.8'
 
 services:
   product-service:
-    image: willchrist/test:1
+    image: willchrist/product:v1
     ports:
       - "8001:8001"
 
   query-service:
-    image: willchrist/q1:latest
+    image: willchrist/query:v1
     ports:
       - "8002:8002"
     depends_on:
@@ -18,7 +18,7 @@ services:
       - PORT_PRODUCT=8001
 
   frontend-service:
-    image: willchrist/frontend:test
+    image: willchrist/front:v2
     ports:
       - "8000:8000"
     depends_on:
