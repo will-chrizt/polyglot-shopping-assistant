@@ -34,4 +34,4 @@ COPY --from=builder /app /app
 
 EXPOSE 8000
 
-CMD ["python", "frontend-service.py"]
+ENTRYPOINT ["python", "frontend-service.py"]
