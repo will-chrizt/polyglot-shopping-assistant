@@ -30,4 +30,4 @@ USER appuser
 
 EXPOSE 8001
 
-CMD ["node", "src/index.js"]
+ENTRYPOINT ["node", "src/index.js"]
