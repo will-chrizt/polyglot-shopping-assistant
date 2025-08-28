@@ -1,0 +1,6 @@
+/workspaces/polyglot-shopping-assistant/services/cart/src/main/java/com/example/cartservice/CartItemRepository.java
+/workspaces/polyglot-shopping-assistant/services/cart/src/main/java/com/example/cartservice/CartController.java
+/workspaces/polyglot-shopping-assistant/services/cart/src/main/java/com/example/cartservice/config/SQLiteIdentityColumnSupport.java
+/workspaces/polyglot-shopping-assistant/services/cart/src/main/java/com/example/cartservice/CartServiceApplication.java
+/workspaces/polyglot-shopping-assistant/services/cart/src/main/java/com/example/cartservice/config/SQLiteDialect.java
+/workspaces/polyglot-shopping-assistant/services/cart/src/main/java/com/example/cartservice/CartItem.java
