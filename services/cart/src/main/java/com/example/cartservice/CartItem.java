@@ -5,18 +5,29 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 
-
 @Entity
 public class CartItem {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
+
     private String productId;
     private String name;
     private double price;
 
-    // Getters and Setters
+    // A no-argument constructor is REQUIRED for JPA and Jackson (JSON deserialization)
+    public CartItem() {
+    }
+
+    // A constructor with arguments is good practice
+    public CartItem(String productId, String name, double price) {
+        this.productId = productId;
+        this.name = name;
+        this.price = price;
+    }
+
+    // Getters and Setters are REQUIRED for Jackson
     public Long getId() {
         return id;
     }

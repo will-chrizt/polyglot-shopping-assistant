@@ -1,24 +1,16 @@
 import os
 import requests
 from flask import Flask, render_template_string, request, redirect, url_for
-from flask import render_template
 
 # --- Flask Configuration ---
 app = Flask(__name__)
 
-# --- Microservice Ports ---
-# Define the ports for the services.
-PRODUCT_SERVICE_PORT = 8001
-CART_SERVICE_PORT = 8080 # Default Spring Boot port
-
-# The URLs of the microservices.
-PRODUCT_SERVICE_URL = f'http://localhost:8001/products'
+# --- Microservice URLs ---
+PRODUCT_SERVICE_URL = 'http://localhost:8001/products'
 CART_SERVICE_URL = 'http://localhost:8080/cart'
 
-
-
 # --- HTML Template for the Web Page ---
-# Updated to include a cart section and "Add to Cart" buttons.
+# (Your HTML_TEMPLATE remains unchanged)
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en">
@@ -102,11 +94,17 @@ HTML_TEMPLATE = """
                 <div class="cart-list">
                     {% if cart_items %}
                         {% for item in cart_items %}
-                        <div class="cart-item">
-                            <span>{{ item.name }}</span>
-                            <strong>${{ item.price }}</strong>
-                        </div>
-                        {% endfor %}
+<div class="cart-item">
+    <div>
+        <span>{{ item.name }}</span><br>
+        <strong>${{ item.price }}</strong>
+    </div>
+    <form method="post" action="/remove_from_cart" style="margin: 0;">
+        <input type="hidden" name="itemId" value="{{ item.id }}">
+        <button type="submit" class="remove-btn">Remove</button>
+    </form>
+</div>
+{% endfor %}
                     {% else %}
                         <p>Your cart is empty.</p>
                     {% endif %}
@@ -129,19 +127,6 @@ def index():
     products = []
     cart_items = []
     error = None
- 
-
-    return render_template_string(
-    HTML_TEMPLATE,
-    query=user_query,
-    answer=answer,
-    products=products,
-    cart_items=cart_items,
-    error=error
-)
-
-
-
 
     # Step 1: Fetch the product list
     try:
@@ -153,11 +138,12 @@ def index():
 
     # Step 2: Fetch cart items
     try:
-        cart_response = requests.get(f"{CART_SERVICE_URL}", timeout=10)
+        cart_response = requests.get(CART_SERVICE_URL, timeout=10)
         cart_response.raise_for_status()
         cart_items = cart_response.json()
     except requests.exceptions.RequestException as e:
-        error = (error or "") + f" Could not connect to the Cart Service. Is it running? Details: {e}"
+        error_msg = f"Could not connect to the Cart Service. Is it running? Details: {e}"
+        error = f"{error}\n{error_msg}" if error else error_msg
 
     # Step 3: Handle the AI query if one exists
     if user_query:
@@ -165,7 +151,30 @@ def index():
         # This part remains unchanged
         pass # Your existing AI query logic here
 
-    return render_template_string(HTML_TEMPLATE, query=user_query, answer=answer, products=products, cart_items=cart_items, error=error)
+    # THIS RETURN STATEMENT IS NOW AT THE END OF THE FUNCTION
+    return render_template_string(
+        HTML_TEMPLATE,
+        query=user_query,
+        answer=answer,
+        products=products,
+        cart_items=cart_items,
+        error=error
+    )
+
+@app.route('/remove_from_cart', methods=['POST'])
+def remove_from_cart():
+    """
+    Handles removing an item from the cart.
+    """
+    try:
+        item_id = request.form['itemId']
+        # The URL for removing from cart is '/cart/remove/{id}'
+        response = requests.delete(f"{CART_SERVICE_URL}/remove/{item_id}", timeout=10)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print(f"Error removing from cart: {e}")
+    
+    return redirect(url_for('index'))    
 
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
@@ -186,10 +195,6 @@ def add_to_cart():
     
     return redirect(url_for('index'))
 
-response = requests.get(f"{CART_SERVICE_URL}")
-cart_items = response.json()
-print("Cart items:", cart_items)
-
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 8000))
-    app.run(host='0.0.0.0', port=PORT)
+    app.run(host='0.0.0.0', port=PORT, debug=True)

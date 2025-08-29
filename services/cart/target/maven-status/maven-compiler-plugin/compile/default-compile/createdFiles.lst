@@ -1,3 +1,4 @@
+com/example/cartservice/CartService.class
 com/example/cartservice/CartController.class
 com/example/cartservice/CartItem.class
 com/example/cartservice/config/SQLiteIdentityColumnSupport.class
