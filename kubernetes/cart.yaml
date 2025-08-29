@@ -1,0 +1,89 @@
+# =================================================================
+# 1. PersistentVolumeClaim (PVC) for Database Storage
+# =================================================================
+# This object requests a piece of storage from the cluster to persist
+# the SQLite database file. It's the K8s equivalent of a Docker named volume.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cart-db-pvc # The name we'll use to refer to this storage claim.
+spec:
+  accessModes:
+    - ReadWriteOnce # This volume can be mounted as read-write by a single node.
+  resources:
+    requests:
+      storage: 1Gi # Request 1 Gibibyte of storage.
+
+---
+# =================================================================
+# 2. Deployment for the Cart Service
+# =================================================================
+# This object manages the lifecycle of the cart-service pod, ensuring
+# it's always running and configured correctly.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart-service-deployment
+  labels:
+    app: cart-service
+spec:
+  replicas: 1 # Run a single instance, as it's a stateful service.
+  selector:
+    matchLabels:
+      app: cart-service
+  template:
+    metadata:
+      labels:
+        app: cart-service # The label the Service will use to find this pod.
+    spec:
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+      # --- FIX: ADD INIT CONTAINER TO SET PERMISSIONS ---
+      # This container runs before the main app container to fix volume permissions.
+      initContainers:
+      - name: init-permissions
+        image: busybox:1.32
+        # --- FIX: RUN INIT CONTAINER AS ROOT ---
+        # This container needs root privileges to run 'chown'.
+        # The pod-level securityContext will still apply to the main container.
+        securityContext:
+          runAsUser: 0
+        command: ['sh', '-c', 'chown -R 1000:1000 /app/data']
+        volumeMounts:
+        - name: cart-storage
+          mountPath: /app/data
+      containers:
+        - name: cart-service
+          image: willchrist/cart:v2 # The Docker image to run.
+          ports:
+            - containerPort: 8080 # The port the application listens on inside the container.
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:sqlite:/app/data/cart.db"
+          volumeMounts:
+            - name: cart-storage # The name of the volume to mount.
+              mountPath: /app/data # Mount the storage inside the app's working directory.
+      volumes:
+        - name: cart-storage
+          persistentVolumeClaim:
+            claimName: cart-db-pvc # Use the PersistentVolumeClaim created above.
+
+---
+# =================================================================
+# 3. Service to Expose the Deployment
+# =================================================================
+# This object provides a stable DNS name and IP address for other services
+# inside the cluster to connect to the cart-service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: cart-service # This name becomes the DNS name for other services to use.
+spec:
+  type: ClusterIP # Exposes the service only within the cluster.
+  selector:
+    app: cart-service # Forwards traffic to any pod with this label.
+  ports:
+    - protocol: TCP
+      port: 8080 # The port that other services will connect to.
+      targetPort: 8080 # The port on the pod to forward traffic to.
