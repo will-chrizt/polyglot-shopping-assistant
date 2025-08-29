@@ -18,10 +18,8 @@ spec:
           ports:
             - containerPort: 8002
           env:
-            - name: HOST_QUERY
-              value: "query-service"
             - name: PORT_PRODUCT
-              value: "8001"
+              value: "8001"  # optional, if used in your code
             - name: QUERY_SERVICE_PORT
               value: "8002"
             - name: PRODUCT_SERVICE_PORT
@@ -38,8 +36,7 @@ spec:
                   name: aws-credentials
                   key: AWS_SECRET_ACCESS_KEY
             - name: AWS_REGION
-              value: "us-east-1"
-
+              value: "us-east-1"      
 
 ---
 apiVersion: v1
