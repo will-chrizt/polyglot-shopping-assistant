@@ -17,6 +17,14 @@ services:
     environment:
       - PORT_PRODUCT=8001
 
+  cart-service:
+    # Replace with your actual cart service image
+    image: willchrist/cart:v2
+    ports:
+      - "8080:8080"
+    # If the cart service needs to be built from a Dockerfile in the current directory:
+    # build: .
+
   frontend-service:
     image: willchrist/front:v2
     ports:
@@ -24,8 +32,11 @@ services:
     depends_on:
       - query-service
       - product-service
+      - cart-service  # Added dependency on cart-service
     env_file:
       - .env
     environment:
       - QUERY_SERVICE_PORT=8002
       - PRODUCT_SERVICE_PORT=8001
+      - CART_SERVICE_PORT=8080 # Added environment variable for cart service
+

@@ -6,9 +6,9 @@ from flask import Flask, render_template_string, request, redirect, url_for
 app = Flask(__name__)
 
 # --- Microservice URLs ---
-PRODUCT_SERVICE_URL = 'http://localhost:8001/products'
-CART_SERVICE_URL = 'http://localhost:8080/cart'
-
+PRODUCT_SERVICE_URL = 'http://product-service:8001/products'
+CART_SERVICE_URL = 'http://cart-service:8080/cart'
+QUERY_SERVICE_URL = 'http://query-service:8002/query'
 # --- HTML Template for the Web Page ---
 # (Your HTML_TEMPLATE remains unchanged)
 HTML_TEMPLATE = """
