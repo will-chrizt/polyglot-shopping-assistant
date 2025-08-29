@@ -148,18 +148,19 @@ def index():
     # Step 3: Handle the AI query if one exists
     if user_query:
         print(f"User query received: '{user_query}'")
-        # This part remains unchanged
-        pass # Your existing AI query logic here
+        try:
+            response = requests.get(QUERY_SERVICE_URL, params={'q': user_query}, timeout=30)
+            response.raise_for_status() 
+            data = response.json()
+            answer = data.get('answer')
+            if not answer:
+                error = data.get('error', 'The query service did not return a valid answer.')
+        except requests.exceptions.RequestException as e:
+            error = f"Could not connect to the AI Query Service. Please ensure it's running. Details: {e}"
+        except Exception as e:
+            error = f"An unexpected error occurred: {e}"
 
-    # THIS RETURN STATEMENT IS NOW AT THE END OF THE FUNCTION
-    return render_template_string(
-        HTML_TEMPLATE,
-        query=user_query,
-        answer=answer,
-        products=products,
-        cart_items=cart_items,
-        error=error
-    )
+    return render_template_string(HTML_TEMPLATE, query=user_query, answer=answer, products=products, error=error)
 
 @app.route('/remove_from_cart', methods=['POST'])
 def remove_from_cart():
