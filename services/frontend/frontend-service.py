@@ -160,7 +160,7 @@ def index():
         except Exception as e:
             error = f"An unexpected error occurred: {e}"
 
-    return render_template_string(HTML_TEMPLATE, query=user_query, answer=answer, products=products, error=error)
+    return render_template_string(HTML_TEMPLATE, query=user_query, answer=answer, products=products,cart_items=cart_items, error=error)
 
 @app.route('/remove_from_cart', methods=['POST'])
 def remove_from_cart():
