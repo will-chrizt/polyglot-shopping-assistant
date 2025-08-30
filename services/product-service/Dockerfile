@@ -29,4 +29,4 @@ USER node
 EXPOSE 8001
 
 # Use CMD to run the application. It provides a default that's easily overridden.
-CMD ["node", "src/index.js"]
+ENTRYPOINT ["node", "src/index.js"]
