@@ -29,13 +29,19 @@ ENV PORT=8000 \
 
 WORKDIR /app
 
-# Copy only application code and requirements
-COPY requirements.txt .
-COPY . .
+# Create a non-root user for better security (Recommended)
+RUN addgroup --system nonroot && adduser --system --ingroup nonroot nonroot
 
-# Install dependencies in runtime (production only)
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy the installed packages from the builder stage
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+
+# Copy the application code from the builder stage
+COPY --from=builder --chown=nonroot:nonroot /app /app
+
+# Switch to the non-root user
+USER nonroot
 
 EXPOSE 8000
 
+# Run the application
 ENTRYPOINT ["python", "frontend-service.py"]
