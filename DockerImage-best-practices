@@ -1,0 +1,27 @@
+1.Used multistage build
+
+2."FROM python:3.11-slim AS builder"    - alpine version is lighter than  slim and great for minimal runtime images.
+                                        - but for my container i need external packages like aws-sdk, to avoid comaptibility issue i used slim version
+
+
+3.ENV PYTHONDONTWRITEBYTECODE=1 -Tells Python not to generate .pyc files (compiled bytecode) when importing modules.   
+                                - When Python imports a module (import mymodule), it usually creates a .pyc file in __pycache__/
+                                - This speeds up subsequent imports because Python can load bytecode instead of recompiling .py files.
+
+4.PYTHONUNBUFFERED=1           - Purpose: Tells Python to disable output buffering for stdout and stderr.
+                               - Default behavior of Python it buffers its output when writing to stdout or stderr.
+                               - In docker Containers usually run in non-interactive mode, so Python output is buffered.
+                               - Buffered output can delay logs, making it hard to debug or monitor real-time behavior.
+
+5.COPY requirements.txt before run command.  - Only changes to requirements.txt invalidate the pip install layer.
+                                             - Changes to your app code (.py files) won’t trigger reinstalling packages.
+
+6.FROM python:3.11.9-slim-bookworm AS runtime   - why bookworm? - Older releases like Bullseye or Buster may have unpatched CVEs eventually.
+                                                                - Bookworm is current stable → supported until mid-2026.
+
+7.RUN addgroup --system nonroot && adduser --system --ingroup nonroot nonroot  - System groups are typically reserved for non-login accounts
+                                                                               - Docker containers default to root, which is dangerous if an attacker compromises your container.
+                                                                               - Running as nonroot ensures least privilege, reducing attack impact.
+
+8.COPY --from=builder --chown=nonroot:nonroot /app /app         - Only copies necessary files, not the build tools or caches.
+                                                                - The non-root user can read/write files without needing root.
