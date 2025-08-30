@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: willchrist/front:v6
+          image: willchrist/front:beta
           ports:
             - containerPort: 8000
           envFrom:
