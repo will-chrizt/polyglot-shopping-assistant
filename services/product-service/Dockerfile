@@ -1,28 +1,33 @@
 # Stage 1: Build dependencies
-FROM node:20-slim AS builder
+FROM node:18-alpine AS builder
+
 WORKDIR /app
 
-# Copy package files and install dependencies for production
+# Install only production dependencies
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-# Copy the rest of the application code
+# Copy source code
 COPY . .
 
-# Stage 2: Final runtime image
-FROM node:20-slim
+
+
+# Stage 2: Runtime
+FROM node:18-alpine
+
+# Create non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
 WORKDIR /app
 
-# Copy only the necessary files from the builder stage
-# Set ownership to the built-in 'node' user for better security
-COPY --from=builder --chown=node:node /app/node_modules ./node_modules
-COPY --from=builder --chown=node:node /app/product-service.js ./
+# Copy only what's needed from builder
+COPY --from=builder /app ./
 
-# Switch to the non-root 'node' user
-USER node
+# Switch to non-root user
+USER appuser
 
-# Expose the port the app runs on
+
+
 EXPOSE 8001
 
-# The command to run the application
-CMD ["node", "src/index.js"]
+ENTRYPOINT ["node", "src/index.js"]
