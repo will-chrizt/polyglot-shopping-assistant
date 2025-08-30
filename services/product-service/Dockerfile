@@ -14,7 +14,7 @@ COPY . .
 
 
 # Stage 2: Runtime
-FROM node:20-slim
+FROM node:20-alpine
 
 
 # Create non-root user
