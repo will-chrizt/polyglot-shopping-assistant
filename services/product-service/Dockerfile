@@ -14,7 +14,8 @@ COPY . .
 
 
 # Stage 2: Runtime
-FROM node:18-alpine
+FROM node:20-slim
+
 
 # Create non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
