@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: product-service
-          image: willchrist/product:v1
+          image: willchrist/product:beta
           ports:
             - containerPort: 8001
           envFrom:
