@@ -79,3 +79,16 @@ Result: Access frontend at http://<ec2-ip>:<nodeport>.
 # - Namespace Management
 
 # - Use separate namespaces for dev, staging, and production to avoid resource conflicts.
+
+
+
+create secret.yam in the machine
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aws-credentials
+  namespace: default  # change if needed
+type: Opaque
+data:
+  AWS_ACCESS_KEY_ID: "id"
+  AWS_SECRET_ACCESS_KEY: "key"
