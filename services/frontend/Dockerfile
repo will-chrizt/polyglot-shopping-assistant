@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY . .
 
 # --- Stage 2: Runtime Environment ---
-FROM python:3.11-slim AS runtime
+FROM python:3.11.9-slim-bookworm AS runtime
 
 ENV PORT=8000 \
     PYTHONDONTWRITEBYTECODE=1 \
