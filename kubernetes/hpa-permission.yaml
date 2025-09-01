@@ -1,0 +1,24 @@
+# This ClusterRole defines the permission to get metrics from the metrics.k8s.io API group.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: hpa-metrics-reader
+rules:
+- apiGroups: ["metrics.k8s.io"]
+  resources: ["pods", "nodes"]
+  verbs: ["get", "list", "watch"]
+
+---
+# This ClusterRoleBinding grants the permissions defined in the hpa-metrics-reader role
+# to the system user that runs the HPA controller.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: hpa-metrics-reader-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: hpa-metrics-reader
+subjects:
+- kind: User
+  name: system:kube-controller-manager

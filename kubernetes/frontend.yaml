@@ -17,6 +17,11 @@ spec:
           image: willchrist/front:beta
           ports:
             - containerPort: 8000
+          resources:
+            requests:
+              cpu: "100m"  # Request 0.1 of a CPU core
+            limits:
+              cpu: "500m"  # Limit to a maximum of 0.5 of a CPU core
           envFrom:
             - configMapRef:
                 name: ecommerce-config

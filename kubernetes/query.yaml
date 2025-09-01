@@ -13,30 +13,47 @@ spec:
         app: query-service
     spec:
       containers:
-        - name: query-service
-          image: willchrist/query:beta
-          ports:
-            - containerPort: 8002
-          env:
-            - name: PORT_PRODUCT
-              value: "8001"  # optional, if used in your code
-            - name: QUERY_SERVICE_PORT
-              value: "8002"
-            - name: PRODUCT_SERVICE_PORT
-              value: "8001"
-            # AWS Secrets
-            - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: aws-credentials
-                  key: AWS_ACCESS_KEY_ID
-            - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: aws-credentials
-                  key: AWS_SECRET_ACCESS_KEY
-            - name: AWS_REGION
-              value: "us-east-1"      
+      - name: query-service
+        image: willchrist/query:beta
+        ports:
+        - containerPort: 8002
+        env:
+        - name: PORT_PRODUCT
+          value: "8001"
+        - name: QUERY_SERVICE_PORT
+          value: "8002"
+        - name: PRODUCT_SERVICE_PORT
+          value: "8001"
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: aws-credentials
+              key: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aws-credentials
+              key: AWS_SECRET_ACCESS_KEY
+        - name: AWS_REGION
+          value: "us-east-1"
+        
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "1000m" # 1 CPU Core
+            memory: "512Mi"
+
+        # The startup probe performs a one-time, full check to ensure
+        # the service and its dependencies are working on launch.
+        startupProbe:
+          httpGet:
+            path: /query?q=startup
+            port: 8002
+          failureThreshold: 12
+          periodSeconds: 10
+          timeoutSeconds: 10
 
 ---
 apiVersion: v1
@@ -47,8 +64,8 @@ spec:
   selector:
     app: query-service
   ports:
-    - protocol: TCP
-      port: 8002
-      targetPort: 8002
+  - protocol: TCP
+    port: 8002
+    targetPort: 8002
   type: ClusterIP
 
