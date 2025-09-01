@@ -1,15 +1,74 @@
-Troubleshooting Kubernetes Horizontal Pod Autoscaler (HPA) SetupDate: September 1, 2025Author: GeminiStatus: Resolved1. IntroductionThis document outlines the step-by-step process of diagnosing and resolving a series of issues encountered while setting up a Horizontal Pod Autoscaler (HPA) for the frontend-deployment in a Kubernetes cluster. The initial symptom was that the HPA was created successfully but was unable to fetch metrics, showing its target CPU utilization as <unknown>.The troubleshooting journey involved diagnosing issues layer by layer, from the metrics collection agent to control plane permissions, and finally to the application's deployment configuration.2. The Troubleshooting JourneyWe encountered and solved three distinct problems to get the HPA fully operational.Problem 1: Metrics Server Failing to Scrape Node MetricsThe first step in setting up an HPA is ensuring the Metrics Server is running correctly, as it provides the CPU and memory data the HPA needs.Symptom: kubectl get hpa showed the target CPU as <unknown>.kubectl get hpa
+Troubleshooting Kubernetes Horizontal Pod Autoscaler (HPA) Setup
+Date: September 1, 2025
+
+Author: Gemini
+
+Status: Resolved
+
+1. Introduction
+This document outlines the step-by-step process of diagnosing and resolving a series of issues encountered while setting up a Horizontal Pod Autoscaler (HPA) for the frontend-deployment in a Kubernetes cluster. The initial symptom was that the HPA was created successfully but was unable to fetch metrics, showing its target CPU utilization as <unknown>.
+
+The troubleshooting journey involved diagnosing issues layer by layer, from the metrics collection agent to control plane permissions, and finally to the application's deployment configuration.
+
+2. The Troubleshooting Journey
+We encountered and solved three distinct problems to get the HPA fully operational.
+
+Problem 1: Metrics Server Failing to Scrape Node Metrics
+The first step in setting up an HPA is ensuring the Metrics Server is running correctly, as it provides the CPU and memory data the HPA needs.
+
+Symptom: kubectl get hpa showed the target CPU as <unknown>.
+
+kubectl get hpa
 # NAME           REFERENCE                          TARGETS         MINPODS   MAXPODS   REPLICAS   AGE
 # frontend-hpa   Deployment/frontend-deployment   <unknown>/80%   2         5         2          7m
-Diagnosis: We checked the logs of the metrics-server pod. The logs revealed a recurring TLS error.kubectl logs metrics-server-xxxxxxxxxx-xxxxx -n kube-system
+
+Diagnosis: We checked the logs of the metrics-server pod. The logs revealed a recurring TLS error.
+
+kubectl logs metrics-server-xxxxxxxxxx-xxxxx -n kube-system
+
 E0901 04:19:25.639800 1 scraper.go:149] "Failed to scrape node" err="Get \"[https://172.31.89.17:10250/metrics/resource](https://172.31.89.17:10250/metrics/resource)\": tls: failed to verify certificate: x509: cannot validate certificate for 172.31.89.17 because it doesn't contain any IP SANs"
-This error meant the Metrics Server was trying to connect to the node's Kubelet via its IP address, but the Kubelet's security certificate was only valid for its hostname (e.g., "kmaster"), not its IP. This mismatch caused the secure connection to fail.Solution: The standard fix for this in non-production environments is to allow the Metrics Server to bypass TLS verification. We edited the metrics-server deployment and added the --kubelet-insecure-tls flag to its command-line arguments.kubectl edit deployment metrics-server -n kube-system
-And added the flag:- --kubelet-insecure-tls
-Problem 2: HPA Controller Lacked PermissionsAfter fixing the Metrics Server, the HPA still showed <unknown>. The next step was to verify that the HPA controller itself could access the metrics data.Symptom: kubectl get hpa continued to show <unknown>, even though the metrics-server logs were now clean.Diagnosis: A direct query to the metrics API as a cluster admin worked, proving the data was available. This isolated the issue to the HPA controller's permissions.kubectl get --raw /apis/metrics.k8s.io/v1beta1/nodes
-The success of this command proved that the component responsible for the HPA—the kube-controller-manager—did not have the necessary permissions (RBAC) to read from the metrics.k8s.io API group.Solution: We created and applied an hpa-permissions.yaml file containing a ClusterRole (to define the "read metrics" permission) and a ClusterRoleBinding (to grant that permission to the system:kube-controller-manager user).kubectl apply -f hpa-permissions.yaml
-Problem 3: Missing Resource Requests in the DeploymentAfter solving the permissions issue, the kube-controller-manager logs revealed the final, critical error.Symptom: The kubectl get hpa command still showed <unknown>.Diagnosis: We checked the controller manager's logs, which showed a new error indicating the root cause.kubectl logs kube-controller-manager-kmaster -n kube-system
+
+This error meant the Metrics Server was trying to connect to the node's Kubelet via its IP address, but the Kubelet's security certificate was only valid for its hostname (e.g., "kmaster"), not its IP. This mismatch caused the secure connection to fail.
+
+Solution: The standard fix for this in non-production environments is to allow the Metrics Server to bypass TLS verification. We edited the metrics-server deployment and added the --kubelet-insecure-tls flag to its command-line arguments.
+
+kubectl edit deployment metrics-server -n kube-system
+
+And added the flag:
+
+- --kubelet-insecure-tls
+
+Problem 2: HPA Controller Lacked Permissions
+After fixing the Metrics Server, the HPA still showed <unknown>. The next step was to verify that the HPA controller itself could access the metrics data.
+
+Symptom: kubectl get hpa continued to show <unknown>, even though the metrics-server logs were now clean.
+
+Diagnosis: A direct query to the metrics API as a cluster admin worked, proving the data was available. This isolated the issue to the HPA controller's permissions.
+
+kubectl get --raw /apis/metrics.k8s.io/v1beta1/nodes
+
+The success of this command proved that the component responsible for the HPA—the kube-controller-manager—did not have the necessary permissions (RBAC) to read from the metrics.k8s.io API group.
+
+Solution: We created and applied an hpa-permissions.yaml file containing a ClusterRole (to define the "read metrics" permission) and a ClusterRoleBinding (to grant that permission to the system:kube-controller-manager user).
+
+kubectl apply -f hpa-permissions.yaml
+
+Problem 3: Missing Resource Requests in the Deployment
+After solving the permissions issue, the kube-controller-manager logs revealed the final, critical error.
+
+Symptom: The kubectl get hpa command still showed <unknown>.
+
+Diagnosis: We checked the controller manager's logs, which showed a new error indicating the root cause.
+
+kubectl logs kube-controller-manager-kmaster -n kube-system
+
 failed to get cpu utilization: missing request for cpu in container frontend
-The HPA was configured to scale based on CPU utilization, which is a percentage calculated as (Current CPU Usage / Requested CPU). Our frontend-deployment manifest was missing the resources.requests.cpu field. Without knowing the "requested" amount of CPU, the HPA could not calculate the utilization percentage.Solution: We updated the frontend.yaml deployment manifest, adding a resources block to the container specification. This defined the baseline CPU request, allowing the HPA to perform its calculation.spec:
+
+The HPA was configured to scale based on CPU utilization, which is a percentage calculated as (Current CPU Usage / Requested CPU). Our frontend-deployment manifest was missing the resources.requests.cpu field. Without knowing the "requested" amount of CPU, the HPA could not calculate the utilization percentage.
+
+Solution: We updated the frontend.yaml deployment manifest, adding a resources block to the container specification. This defined the baseline CPU request, allowing the HPA to perform its calculation.
+
+spec:
   containers:
   - name: frontend
     image: willchrist/front:beta
@@ -20,5 +79,29 @@ The HPA was configured to scale based on CPU utilization, which is a percentage 
         cpu: "100m"  # Request 0.1 of a CPU core
       limits:
         cpu: "500m"  # Limit to a maximum of 0.5 of a CPU core
-The fix was deployed by running:kubectl apply -f frontend.yaml
-After applying this change, the HPA immediately began reporting the correct CPU utilization and became fully operational.3. Conclusion and Key TakeawaysSuccessfully setting up an HPA requires ensuring the entire metrics pipeline is functional. The key lessons learned from this process are:Verify the Metrics Server First: Always check the metrics-server logs in the kube-system namespace as the first step.Check Permissions (RBAC): The control plane components, like the kube-controller-manager, need explicit permissions to access APIs.Resource Requests are Mandatory: An HPA cannot calculate CPU or memory utilization if the target deployment's containers do not have resources.requests defined. This is the most common reason for an HPA to fail with an <unknown> status.4. Key Debugging Commands Referencekubectl get hpa: Check the current status of the HPA and its target metrics.kubectl logs <pod-name> -n <namespace>: The primary tool for checking application-level errors. Essential for the metrics-server and kube-controller-manager.kubectl describe <resource-type> <resource-name>: View the detailed state and recent events for any Kubernetes object (pods, services, deployments).kubectl get --raw /apis/<api-group>/<version>: Directly test an aggregated API endpoint (like metrics) to check if it's available, bypassing RBAC.kubectl edit <resource-type> <resource-name> -n <namespace>: Make live changes to a running component, useful for adding command-line flags.   ss
+
+The fix was deployed by running:
+
+kubectl apply -f frontend.yaml
+
+After applying this change, the HPA immediately began reporting the correct CPU utilization and became fully operational.
+
+3. Conclusion and Key Takeaways
+Successfully setting up an HPA requires ensuring the entire metrics pipeline is functional. The key lessons learned from this process are:
+
+Verify the Metrics Server First: Always check the metrics-server logs in the kube-system namespace as the first step.
+
+Check Permissions (RBAC): The control plane components, like the kube-controller-manager, need explicit permissions to access APIs.
+
+Resource Requests are Mandatory: An HPA cannot calculate CPU or memory utilization if the target deployment's containers do not have resources.requests defined. This is the most common reason for an HPA to fail with an <unknown> status.
+
+4. Key Debugging Commands Reference
+kubectl get hpa: Check the current status of the HPA and its target metrics.
+
+kubectl logs <pod-name> -n <namespace>: The primary tool for checking application-level errors. Essential for the metrics-server and kube-controller-manager.
+
+kubectl describe <resource-type> <resource-name>: View the detailed state and recent events for any Kubernetes object (pods, services, deployments).
+
+kubectl get --raw /apis/<api-group>/<version>: Directly test an aggregated API endpoint (like metrics) to check if it's available, bypassing RBAC.
+
+kubectl edit <resource-type> <resource-name> -n <namespace>: Make live changes to a running component, useful for adding command-line flags.
