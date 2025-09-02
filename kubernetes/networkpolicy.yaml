@@ -1,10 +1,4 @@
-# This file contains the complete and correct set of NetworkPolicy manifests for the e-commerce application.
-# It follows a zero-trust model, starting with a default deny and then explicitly allowing all required traffic.
-# This version combines the proven, working rules with the complete application communication graph.
 
-# =================================================================
-# 1. Foundational "Default Deny" Policy
-# =================================================================
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -15,10 +9,7 @@ spec:
   - Ingress
   - Egress
 
----
-# =================================================================
-# 2. Policy for the Frontend Service
-# =================================================================
+
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -31,7 +22,7 @@ spec:
   - Ingress
   - Egress
   ingress:
-  # Rule to allow INCOMING traffic from the NGINX Ingress controller (from your working file).
+  # Rule to allow INCOMING traffic from the NGINX Ingress controller 
   - from:
     - namespaceSelector:
         matchLabels:
@@ -65,10 +56,9 @@ spec:
     - protocol: TCP
       port: 53
 
----
-# =================================================================
-# 3. Policy for the Cart Service
-# =================================================================
+
+
+
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -109,10 +99,9 @@ spec:
     - protocol: TCP
       port: 53
 
----
-# =================================================================
-# 4. Policy for the Product Service
-# =================================================================
+
+
+
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -156,10 +145,9 @@ spec:
     - protocol: TCP
       port: 53
 
----
-# =================================================================
-# 5. Policy for the Query Service
-# =================================================================
+
+
+
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
