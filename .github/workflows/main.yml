@@ -14,7 +14,7 @@ jobs:
   # JOB 1: Detect which microservices have changed.
   # =================================================================
   detect-changes:
-    runs-on: self-hosted
+    runs-on: kmaster
     outputs:
       # These outputs will be used by the next job to decide what to build.
       frontend: ${{ steps.filter.outputs.frontend }}
