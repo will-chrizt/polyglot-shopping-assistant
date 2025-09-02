@@ -1,0 +1,129 @@
+
+
+# FILE: .github/workflows/deploy-to-k8s.yaml
+
+name: Build, Push, and Deploy to Kubernetes (Optimized)
+
+on:
+  push:
+    branches:
+      - github-action
+
+jobs:
+  # =================================================================
+  # JOB 1: Detect which microservices have changed.
+  # =================================================================
+  detect-changes:
+    runs-on: self-hosted
+    outputs:
+      # These outputs will be used by the next job to decide what to build.
+      frontend: ${{ steps.filter.outputs.frontend }}
+      product: ${{ steps.filter.outputs.product }}
+      cart: ${{ steps.filter.outputs.cart }}
+      query: ${{ steps.filter.outputs.query }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'services/frontend/**'
+            product:
+              - 'services/product-service/**'
+            cart:
+              - 'services/cart-service/**'
+            query:
+              - 'services/query-service/**'
+
+  # =================================================================
+  # JOB 2: Build and deploy only the changed services.
+  # =================================================================
+  build-and-deploy:
+    # This job depends on the 'detect-changes' job finishing first.
+    needs: detect-changes
+    runs-on: self-hosted
+    # This job only runs if at least one of the microservices has changed.
+    if: needs.detect-changes.outputs.frontend == 'true' || needs.detect-changes.outputs.product == 'true' || needs.detect-changes.outputs.cart == 'true' || needs.detect-changes.outputs.query == 'true'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and Push Docker Images
+      run: |
+        # Replace 'your-dockerhub-username' with your actual Docker Hub username
+        DOCKER_USERNAME=your-dockerhub-username
+        
+        # Build frontend only if its files changed
+        if [[ "${{ needs.detect-changes.outputs.frontend }}" == "true" ]]; then
+          echo "--- Building and pushing frontend image ---"
+          FRONT_TAG=${{ github.sha }}-front
+          docker build -t $DOCKER_USERNAME/front:$FRONT_TAG ./services/frontend
+          docker push $DOCKER_USERNAME/front:$FRONT_TAG
+        fi
+
+        # Build product service only if its files changed
+        if [[ "${{ needs.detect-changes.outputs.product }}" == "true" ]]; then
+          echo "--- Building and pushing product image ---"
+          PRODUCT_TAG=${{ github.sha }}-product
+          docker build -t $DOCKER_USERNAME/product:$PRODUCT_TAG ./services/product-service
+          docker push $DOCKER_USERNAME/product:$PRODUCT_TAG
+        fi
+
+        # Build cart service only if its files changed
+        if [[ "${{ needs.detect-changes.outputs.cart }}" == "true" ]]; then
+          echo "--- Building and pushing cart image ---"
+          CART_TAG=${{ github.sha }}-cart
+          docker build -t $DOCKER_USERNAME/cart:$CART_TAG ./services/cart-service
+          docker push $DOCKER_USERNAME/cart:$CART_TAG
+        fi
+
+        # Build query service only if its files changed
+        if [[ "${{ needs.detect-changes.outputs.query }}" == "true" ]]; then
+          echo "--- Building and pushing query image ---"
+          QUERY_TAG=${{ github.sha }}-query
+          docker build -t $DOCKER_USERNAME/query:$QUERY_TAG ./services/query-service
+          docker push $DOCKER_USERNAME/query:$QUERY_TAG
+        fi
+
+    - name: Update Kubernetes Manifests
+      run: |
+        # Replace 'your-dockerhub-username' with your actual Docker Hub username
+        DOCKER_USERNAME=your-dockerhub-username
+
+        if [[ "${{ needs.detect-changes.outputs.frontend }}" == "true" ]]; then
+          echo "--- Updating frontend manifest ---"
+          FRONT_TAG=${{ github.sha }}-front
+          sed -i "s|image: .*|image: $DOCKER_USERNAME/front:$FRONT_TAG|g" ./kubernetes/frontend.yaml
+        fi
+
+        if [[ "${{ needs.detect-changes.outputs.product }}" == "true" ]]; then
+          echo "--- Updating product manifest ---"
+          PRODUCT_TAG=${{ github.sha }}-product
+          sed -i "s|image: .*|image: $DOCKER_USERNAME/product:$PRODUCT_TAG|g" ./kubernetes/products.yaml
+        fi
+        
+        if [[ "${{ needs.detect-changes.outputs.cart }}" == "true" ]]; then
+          echo "--- Updating cart manifest ---"
+          CART_TAG=${{ github.sha }}-cart
+          sed -i "s|image: .*|image: $DOCKER_USERNAME/cart:$CART_TAG|g" ./kubernetes/cart.yaml
+        fi
+
+        if [[ "${{ needs.detect-changes.outputs.query }}" == "true" ]]; then
+          echo "--- Updating query manifest ---"
+          QUERY_TAG=${{ github.sha }}-query
+          sed -i "s|image: .*|image: $DOCKER_USERNAME/query:$QUERY_TAG|g" ./kubernetes/query.yaml
+        fi
+
+    - name: Apply Kubernetes Manifests
+      run: |
+        echo "--- Applying all Kubernetes manifests ---"
+        # We apply all files because kubectl is declarative and will only update what's changed.
+        kubectl apply -f ./kubernetes/
