@@ -118,4 +118,4 @@ spec:
   ports:
     - protocol: TCP
       port: 8080 # The port that other services will connect to.
-      targetPort: 8080 # The port on the pod to forward traffic to.
+      targetPort: 8080 # The port on the pod to forward traffic to. yo
