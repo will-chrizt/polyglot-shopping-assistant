@@ -59,7 +59,7 @@ jobs:
     - name: Build and Push Docker Images
       run: |
         # Replace 'your-dockerhub-username' with your actual Docker Hub username
-        DOCKER_USERNAME=your-dockerhub-username
+        DOCKER_USERNAME=willchrist
         
         # Build frontend only if its files changed
         if [[ "${{ needs.detect-changes.outputs.frontend }}" == "true" ]]; then
@@ -96,7 +96,7 @@ jobs:
     - name: Update Kubernetes Manifests
       run: |
         # Replace 'your-dockerhub-username' with your actual Docker Hub username
-        DOCKER_USERNAME=your-dockerhub-username
+        DOCKER_USERNAME=willchrist
 
         if [[ "${{ needs.detect-changes.outputs.frontend }}" == "true" ]]; then
           echo "--- Updating frontend manifest ---"
