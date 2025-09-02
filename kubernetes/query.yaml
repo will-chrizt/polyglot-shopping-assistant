@@ -44,9 +44,6 @@ spec:
           limits:
             cpu: "1000m" # 1 CPU Core
             memory: "512Mi"
-
-        # The startup probe performs a one-time, full check to ensure
-        # the service and its dependencies are working on launch.
         startupProbe:
           httpGet:
             path: /query?q=startup
