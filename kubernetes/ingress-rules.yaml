@@ -7,8 +7,6 @@ spec:
   rules:
     - http:
         paths:
-          # More specific paths should come before the general catch-all path.
-          # Query service
           - path: /query
             pathType: Prefix
             backend:
@@ -16,8 +14,6 @@ spec:
                 name: query-service
                 port:
                   number: 8002
-
-          # Product service
           - path: /products
             pathType: Prefix
             backend:
@@ -25,8 +21,6 @@ spec:
                 name: product-service
                 port:
                   number: 8001
-
-          # Cart service
           - path: /cart
             pathType: Prefix
             backend:
@@ -34,8 +28,6 @@ spec:
                 name: cart-service
                 port:
                   number: 8080
-
-          # Frontend (catch-all) - THIS MUST BE LAST
           - path: /
             pathType: Prefix
             backend:
