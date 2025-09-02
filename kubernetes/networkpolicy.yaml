@@ -1,0 +1,208 @@
+# This file contains the complete and correct set of NetworkPolicy manifests for the e-commerce application.
+# It follows a zero-trust model, starting with a default deny and then explicitly allowing all required traffic.
+# This version combines the proven, working rules with the complete application communication graph.
+
+# =================================================================
+# 1. Foundational "Default Deny" Policy
+# =================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+spec:
+  podSelector: {} # An empty podSelector applies the policy to ALL pods in the namespace.
+  policyTypes:
+  - Ingress
+  - Egress
+
+---
+# =================================================================
+# 2. Policy for the Frontend Service
+# =================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Rule to allow INCOMING traffic from the NGINX Ingress controller (from your working file).
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: ingress-nginx
+  egress:
+  # Rule to allow OUTGOING traffic to all necessary backend services.
+  - to:
+    - podSelector:
+        matchLabels:
+          app: cart-service
+    - podSelector:
+        matchLabels:
+          app: product-service
+    - podSelector:
+        matchLabels:
+          app: query-service
+  # Rule for DNS resolution (from your working file).
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+
+---
+# =================================================================
+# 3. Policy for the Cart Service
+# =================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cart-service-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: cart-service
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow INCOMING traffic from frontend and product services.
+  - from:
+    - podSelector:
+        matchLabels:
+          app: frontend
+    - podSelector:
+        matchLabels:
+          app: product-service
+  egress:
+  # Allow OUTGOING traffic to the product service.
+  - to:
+    - podSelector:
+        matchLabels:
+          app: product-service
+  # Rule for DNS resolution.
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+
+---
+# =================================================================
+# 4. Policy for the Product Service
+# =================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: product-service-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: product-service
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow INCOMING traffic from frontend, query, and cart services.
+  - from:
+    - podSelector:
+        matchLabels:
+          app: frontend
+    - podSelector:
+        matchLabels:
+          app: query-service
+    - podSelector:
+        matchLabels:
+          app: cart-service
+  egress:
+  # Allow OUTGOING traffic to the cart service.
+  - to:
+    - podSelector:
+        matchLabels:
+          app: cart-service
+  # Rule for DNS resolution.
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+
+---
+# =================================================================
+# 5. Policy for the Query Service
+# =================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: query-service-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: query-service
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow INCOMING traffic from the frontend service.
+  - from:
+    - podSelector:
+        matchLabels:
+          app: frontend
+  egress:
+  # Allow OUTGOING traffic to the product service.
+  - to:
+    - podSelector:
+        matchLabels:
+          app: product-service
+  # Rule for DNS resolution.
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  # Allow OUTGOING traffic to the public internet (for AWS Bedrock).
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+        except:
+          - 10.0.0.0/8
+          - 172.16.0.0/12
+          - 192.168.0.0/16
+
+
