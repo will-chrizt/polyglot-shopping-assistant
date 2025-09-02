@@ -19,9 +19,9 @@ spec:
             - containerPort: 8000
           resources:
             requests:
-              cpu: "100m"  # Request 0.1 of a CPU core
+              cpu: "100m"  
             limits:
-              cpu: "500m"  # Limit to a maximum of 0.5 of a CPU core
+              cpu: "500m"  
           envFrom:
             - configMapRef:
                 name: ecommerce-config
