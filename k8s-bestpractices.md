@@ -45,3 +45,4 @@ External user traffic is effectively managed to access the various microservices
 
 ```
 ```
+https://github.com/shopping-microservices-microshop/deploy-centre/blob/main/k8s-bestpractices.md
